@@ -10,7 +10,7 @@ import requests
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # Get image URL from environment variable
-image_url = os.environ.get('IMAGE_URL')
+image_url = os.environ.get('image_url')
 # Download the image
 response = requests.get(image_url)
 image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
