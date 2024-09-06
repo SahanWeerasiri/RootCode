@@ -1,23 +1,34 @@
+import os
 import cv2
 import pytesseract
-import re
-import json
+import base64
 from flask_cors import CORS
 from flask import Flask, jsonify, request
 
-# Specify the path to Tesseract executable
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+# Set up relative path or environment variable for Tesseract executable
+pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_CMD', '/usr/bin/tesseract')
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/detect-passport', methods=['POST'])
 def detect_passport():
-    image_path = request.get_json()['image']
-    image = cv2.imread(image_path)
+    # Expect the image as base64 string and decode it
+    data = request.get_json()
+    image_base64 = data.get('image')
+
+    if not image_base64:
+        return jsonify({"error": "No image data provided."}), 400
+
+    # Decode the base64 image
+    import io
+    import numpy as np
+    image_bytes = base64.b64decode(image_base64)
+    image_np = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
     if image is None:
-        return jsonify({"error": "Could not open or find the image at the specified path."}), 400
+        return jsonify({"error": "Could not decode the image data."}), 400
 
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -82,16 +93,16 @@ def detect_passport():
             y2 = min(y + h + padding, image.shape[0])
 
             face = image[y1:y2, x1:x2]
-            face_path = 'C:\\Users\\SAHAN\\Desktop\\extracted_face_with_padding.jpg'
-            cv2.imwrite(face_path, face)  # Save the extracted face image
-            return face_path
+            _, buffer = cv2.imencode('.jpg', face)
+            face_base64 = base64.b64encode(buffer).decode('utf-8')
+            return face_base64
 
     # Extract face from the passport with padding
-    face_path = extract_face_with_padding(image, padding=40)
-    
+    face_base64 = extract_face_with_padding(image, padding=40)
+
     response_data = {"passport_info": passport_info}
-    if face_path:
-        response_data["face_image"] = face_path
+    if face_base64:
+        response_data["face_image"] = face_base64
 
     return jsonify(response_data)
 
