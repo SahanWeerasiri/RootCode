@@ -10,8 +10,8 @@ import requests
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # Get image URL from environment variable
-image_url = os.environ.get('IMAGE_URL')
-
+#image_url = os.environ.get('IMAGE_URL')
+image_url='https://drive.google.com/file/d/1RIhLdmoW5LxX0gV0MuIzN_tVotcDNbkO/view?usp=drivesdk'
 # Download the image
 response = requests.get(image_url)
 image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
