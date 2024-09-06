@@ -1,17 +1,14 @@
-name: Deploy Flask Application
-
+name: Passport Detection
 on:
   workflow_dispatch:
     inputs:
       image:
         description: 'Base64 encoded image'
         required: true
-        default: ''
 
 jobs:
-  deploy:
+  process_image:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -23,24 +20,20 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y tesseract-ocr
+        sudo apt-get install -y libopencv-dev python3-opencv
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install opencv-python-headless pytesseract
 
-    - name: Run Flask application
+    - name: Run passport detection
+      env:
+        IMAGE_BASE64: ${{ github.event.inputs.image }}
       run: |
-        export FLASK_APP=app.py
-        export FLASK_ENV=development
-        nohup flask run --host=0.0.0.0 --port=5000 &
-
-    - name: Test Flask endpoint
-      run: |
-        sleep 10  # Wait for the Flask app to start
-        response=$(curl -X POST "http://localhost:5000/detect-passport" -H "Content-Type: application/json" -d "{\"image\": \"<base64-encoded-image-data>\"}")
-        echo "Response: $response"
-        echo "$response" > response.json
+        python passport_detection.py
 
     - name: Upload results
       uses: actions/upload-artifact@v3
       with:
-        name: response
-        path: response.json
+        name: passport_detection_result
+        path: passport_detection_result.json
