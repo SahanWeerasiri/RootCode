@@ -2,8 +2,8 @@ name: Passport Detection
 on:
   workflow_dispatch:
     inputs:
-      image:
-        description: 'Base64 encoded image'
+      image_url:
+        description: 'URL of the image'
         required: true
 
 jobs:
@@ -24,11 +24,11 @@ jobs:
         sudo apt-get install -y tesseract-ocr
         sudo apt-get install -y libopencv-dev python3-opencv
         python -m pip install --upgrade pip
-        pip install opencv-python-headless pytesseract
+        pip install opencv-python-headless pytesseract requests
 
     - name: Run passport detection
       env:
-        IMAGE_BASE64: ${{ github.event.inputs.image }}
+        IMAGE_URL: ${{ github.event.inputs.image_url }}
       run: |
         python passport_detection.py
 
