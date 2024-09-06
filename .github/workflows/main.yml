@@ -1,15 +1,15 @@
-name: Run Python Server
+name: Deploy Flask Application
 
 on:
   workflow_dispatch:
     inputs:
-      data:
-        description: 'Input data'
+      image:
+        description: 'Base64 encoded image'
         required: true
         default: ''
 
 jobs:
-  run-python:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,12 +26,21 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Python script
+    - name: Run Flask application
       run: |
-        python your_script.py ${{ github.event.inputs.data }}
+        export FLASK_APP=app.py
+        export FLASK_ENV=development
+        nohup flask run --host=0.0.0.0 --port=5000 &
+
+    - name: Test Flask endpoint
+      run: |
+        sleep 10  # Wait for the Flask app to start
+        response=$(curl -X POST "http://localhost:5000/detect-passport" -H "Content-Type: application/json" -d "{\"image\": \"<base64-encoded-image-data>\"}")
+        echo "Response: $response"
+        echo "$response" > response.json
 
     - name: Upload results
       uses: actions/upload-artifact@v3
       with:
-        name: results
-        path: path/to/results
+        name: response
+        path: response.json
