@@ -6,27 +6,13 @@ import json
 import numpy as np
 import requests
 
+
 # Set Tesseract command
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # Get image URL from environment variable
 image_url = os.environ.get('IMAGE_URL')
-# Download the image
-response = requests.get(image_url)
-image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
-image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
-# Convert to grayscale
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-# OCR to extract all text
-text = pytesseract.image_to_string(gray)
-
-# Extract the MRZ (bottom 2 lines)
-custom_config = '--psm 6'
-mrz = pytesseract.image_to_string(gray, config=custom_config)
-mrz_lines = mrz.strip().split('\n')[-2:]
-mrz_text = ' '.join(mrz_lines)
 
 # Parse MRZ data
 def parse_mrz(mrz_lines):
@@ -48,7 +34,7 @@ def parse_mrz(mrz_lines):
     }
     return passport_data
 
-passport_info = parse_mrz(mrz_lines)
+
 
 # Face Detection and Extraction
 def extract_face_with_padding(image, padding=40):
@@ -66,14 +52,54 @@ def extract_face_with_padding(image, padding=40):
         face_base64 = base64.b64encode(buffer).decode('utf-8')
         return face_base64
 
-face_base64 = extract_face_with_padding(image, padding=40)
 
-response_data = {"passport_info": passport_info}
-if face_base64:
-    response_data["face_image"] = face_base64
 
-# Save the result to a file
-with open('passport_detection_result.json', 'w') as f:
-    json.dump(response_data, f)
+if image_url:
+    # Download the image
+    response = requests.get(image_url)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Save the image locally
+        local_image_path = "downloaded_image.jpg"
+        with open(local_image_path, "wb") as f:
+            f.write(response.content)
+        
+        # Load the image from the local path
+        image = cv2.imread(local_image_path)
+        
+        # Check if the image was loaded properly
+        if image is not None:
+            # Convert to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            # Continue with your processing...
+            # OCR to extract all text
+            text = pytesseract.image_to_string(gray)
+            
+            # Extract the MRZ (bottom 2 lines)
+            custom_config = '--psm 6'
+            mrz = pytesseract.image_to_string(gray, config=custom_config)
+            mrz_lines = mrz.strip().split('\n')[-2:]
+            mrz_text = ' '.join(mrz_lines)
 
-print(json.dumps(response_data, indent=2))
+            passport_info = parse_mrz(mrz_lines)
+        
+            face_base64 = extract_face_with_padding(image, padding=40)
+            
+            response_data = {"passport_info": passport_info}
+            if face_base64:
+                response_data["face_image"] = face_base64
+            
+            # Save the result to a file
+            with open('passport_detection_result.json', 'w') as f:
+                json.dump(response_data, f)
+            
+            print(json.dumps(response_data, indent=2))
+
+            
+        else:
+            print("Error: Image could not be loaded from the local file.")
+    else:
+        print(f"Error: Failed to download the image. Status code: {response.status_code}")
+else:
+    print("Error: IMAGE_URL environment variable not set.")
