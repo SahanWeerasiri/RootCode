@@ -4,17 +4,18 @@ import pytesseract
 import base64
 import json
 import numpy as np
+import requests
 
 # Set Tesseract command
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
-# Get base64 image from environment variable
-image_base64 = os.environ.get('IMAGE_BASE64')
+# Get image URL from environment variable
+image_url = os.environ.get('IMAGE_URL')
 
-# Decode the base64 image
-image_bytes = base64.b64decode(image_base64)
-image_np = np.frombuffer(image_bytes, np.uint8)
-image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+# Download the image
+response = requests.get(image_url)
+image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
+image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
 # Convert to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
