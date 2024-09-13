@@ -1,6 +1,8 @@
 name: Run Jupyter Notebook
 
 on:
+  workflow_dispatch:
+  
   push:
     branches:
       - main
@@ -25,4 +27,4 @@ jobs:
 
     - name: Run Jupyter Notebook
       run: |
-        jupyter nbconvert --to notebook --execute recommendations.ipynb
+        jupyter nbconvert --to notebook --execute recommend.ipynb
