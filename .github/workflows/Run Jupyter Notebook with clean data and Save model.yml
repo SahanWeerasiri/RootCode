@@ -35,6 +35,6 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git add recommendation_model.pkl example_user_recommendations.txt user_place_recommendations_with_clean_data.csv
+        git add recommendation_model.pkl example_user_recommendations.csv user_place_recommendations_with_clean_data.csv
         git commit -m "Save recommendation model and example user recommendations"
         git push
